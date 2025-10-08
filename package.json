@@ -1,0 +1,67 @@
+{
+    "name": "semantic-release-linear",
+    "version": "0.0.1",
+    "description": "Semantic-release plugin to update Linear issues with version labels",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "engines": {
+        "node": ">=18"
+    },
+    "type": "module",
+    "scripts": {
+        "build": "tsc",
+        "build:watch": "tsc --watch",
+        "clean": "rm -rf dist",
+        "prebuild": "npm run clean",
+        "prepublishOnly": "npm run build",
+        "type-check": "tsc --noEmit",
+        "lint": "eslint src/**/*.ts",
+        "format": "prettier --write src/**/*.ts",
+        "prepare": "husky"
+    },
+    "keywords": [
+        "semantic-release",
+        "linear",
+        "version",
+        "release",
+        "plugin",
+        "typescript"
+    ],
+    "author": "Caio Pizzol",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/caiopizzol/semantic-release-linear.git"
+    },
+    "peerDependencies": {
+        "semantic-release": ">=20.0.0"
+    },
+    "dependencies": {
+        "@semantic-release/error": "^4.0.0",
+        "node-fetch": "^3.3.2"
+    },
+    "devDependencies": {
+        "@types/node": "^24.7.0",
+        "@types/node-fetch": "^2.6.13",
+        "@types/semantic-release": "^21.1.0",
+        "@typescript-eslint/eslint-plugin": "^8.46.0",
+        "@typescript-eslint/parser": "^8.46.0",
+        "eslint": "^9.37.0",
+        "husky": "^9.1.7",
+        "lint-staged": "^16.2.3",
+        "prettier": "^3.6.2",
+        "semantic-release": "^24.2.9",
+        "typescript": "^5.9.3"
+    },
+    "files": [
+        "dist",
+        "src"
+    ],
+    "lint-staged": {
+        "*.ts": [
+            "eslint --fix",
+            "prettier --write",
+            "tsc --noEmit"
+        ]
+    }
+}
