@@ -1,5 +1,5 @@
 {
-    "name": "semantic-release-linear",
+    "name": "semantic-release-linear-app",
     "version": "0.0.1",
     "description": "Semantic-release plugin to update Linear issues with version labels",
     "main": "dist/index.js",
@@ -39,7 +39,7 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/caiopizzol/semantic-release-linear.git"
+        "url": "https://github.com/caiopizzol/semantic-release-linear-app.git"
     },
     "peerDependencies": {
         "semantic-release": ">=20.0.0"

@@ -1,4 +1,4 @@
-# semantic-release-linear
+# semantic-release-linear-app
 
 > A [semantic-release](https://github.com/semantic-release/semantic-release) plugin to automatically update Linear issues with version labels when they're included in releases.
 
@@ -15,7 +15,7 @@
 ## Install
 
 ```bash
-npm install --save-dev semantic-release-linear
+npm install --save-dev semantic-release-linear-app
 ```
 
 ## Usage
@@ -27,7 +27,7 @@ Add the plugin to your semantic-release configuration:
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
-    ["semantic-release-linear", {
+    ["semantic-release-linear-app", {
       "apiKey": "lin_api_xxx"
     }],
     "@semantic-release/github"
@@ -40,7 +40,7 @@ Add the plugin to your semantic-release configuration:
 If you're using TypeScript for your configuration, the plugin exports types:
 
 ```typescript
-import type { PluginConfig } from 'semantic-release-linear';
+import type { PluginConfig } from 'semantic-release-linear-app';
 
 const config: PluginConfig = {
   apiKey: process.env.LINEAR_API_KEY,
@@ -89,7 +89,7 @@ module.exports = {
   plugins: [
     '@semantic-release/commit-analyzer',
     '@semantic-release/release-notes-generator',
-    ['semantic-release-linear', {
+    ['semantic-release-linear-app', {
       teamKeys: ['ENG', 'FEAT', 'BUG'],
       labelPrefix: 'version:',
       removeOldLabels: true,
