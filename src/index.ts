@@ -1,5 +1,5 @@
 /**
- * semantic-release-linear
+ * semantic-release-linear-app
  * A semantic-release plugin to update Linear issues with version labels
  */
 
