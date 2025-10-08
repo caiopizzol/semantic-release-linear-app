@@ -6,7 +6,7 @@ const config = {
   branches: [
     {
       name: 'stable',
-      channel: 'latest', // Only stable gets @latest
+      channel: 'latest',
     },
     {
       name: 'main',

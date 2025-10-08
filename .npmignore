@@ -1,0 +1,7 @@
+src/
+*.ts
+!*.d.ts
+.husky/
+tsconfig.json
+eslint.config.js
+.releaserc.cjs
