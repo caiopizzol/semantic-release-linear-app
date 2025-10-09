@@ -1,3 +1,10 @@
+# [0.2.0](https://github.com/caiopizzol/semantic-release-linear/compare/v0.1.0...v0.2.0) (2025-10-09)
+
+
+### Features
+
+* update README and configuration for semantic-release-linear ([4a0aba0](https://github.com/caiopizzol/semantic-release-linear/commit/4a0aba04ee18ae69bd232afecf66e932cb349a38))
+
 # [0.1.0](https://github.com/caiopizzol/semantic-release-linear/compare/v0.0.0...v0.1.0) (2025-10-08)
 
 
