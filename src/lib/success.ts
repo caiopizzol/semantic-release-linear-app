@@ -1,6 +1,6 @@
 import { SuccessContext } from "semantic-release";
 import { LinearClient } from "./linear-client";
-import { parseIssues } from "./parse-issues";
+import { parseIssuesFromBranch, shouldProcessBranch } from "./parse-issues";
 import {
   PluginConfig,
   LinearContext,
@@ -10,19 +10,29 @@ import {
 
 interface ExtendedContext extends SuccessContext {
   linear?: LinearContext;
+  branch: {
+    name: string;
+    [key: string]: unknown;
+  };
 }
 
 /**
  * Update Linear issues after a successful release
+ * Only uses branch name for issue detection - single source of truth
  */
 export async function success(
   pluginConfig: PluginConfig,
   context: ExtendedContext,
 ): Promise<void> {
-  const { logger, nextRelease, commits, linear } = context;
+  const { logger, nextRelease, linear, branch } = context;
 
   if (!linear) {
     logger.log("Linear context not found, skipping issue updates");
+    return;
+  }
+
+  if (!branch.name) {
+    logger.log("No branch name available, skipping Linear updates");
     return;
   }
 
@@ -30,7 +40,17 @@ export async function success(
     removeOldLabels = true,
     addComment = false,
     dryRun = false,
+    skipBranches = ["main", "master", "develop", "staging", "production"],
+    requireIssueInBranch = true,
   } = pluginConfig;
+
+  // Check if this branch should be processed
+  if (requireIssueInBranch && !shouldProcessBranch(branch.name, skipBranches)) {
+    logger.log(
+      `Branch "${branch.name}" doesn't contain Linear issues or is in skip list, skipping updates`,
+    );
+    return;
+  }
 
   const client = new LinearClient(linear.apiKey);
   const version = nextRelease.version;
@@ -40,23 +60,31 @@ export async function success(
   const labelName = `${linear.labelPrefix}${version}`;
   const labelColor = getLabelColor(nextRelease.type as ReleaseType);
 
-  logger.log(`Updating Linear issues for release ${version} (${channel})`);
+  logger.log(
+    `Updating Linear issues for release ${version} (${channel}) from branch "${branch.name}"`,
+  );
 
-  // Extract issue IDs from commits
-  const issueIds = parseIssues(commits, linear.teamKeys);
+  // Extract issue IDs from branch name ONLY
+  const issueIds = parseIssuesFromBranch(branch.name, linear.teamKeys);
 
   if (issueIds.length === 0) {
-    logger.log("No Linear issues found in commits");
+    logger.log(`No Linear issues found in branch name "${branch.name}"`);
+    if (requireIssueInBranch) {
+      logger.warn(
+        "⚠️  Consider using branch names like: feature/ENG-123-description",
+      );
+    }
     return;
   }
 
   logger.log(
-    `Found ${issueIds.length} Linear issue(s): ${issueIds.join(", ")}`,
+    `Found ${issueIds.length} Linear issue(s) in branch "${branch.name}": ${issueIds.join(", ")}`,
   );
 
   if (dryRun) {
     logger.log("[Dry run] Would update issues:", issueIds);
     logger.log(`[Dry run] Would apply label: ${labelName}`);
+    logger.log(`[Dry run] Branch: ${branch.name}`);
     return;
   }
 
@@ -72,7 +100,7 @@ export async function success(
         const issue = await client.getIssue(issueId);
 
         if (!issue) {
-          logger.warn(`Issue ${issueId} not found, skipping`);
+          logger.warn(`Issue ${issueId} not found in Linear, skipping`);
           return { issueId, status: "not_found" };
         }
 
@@ -86,7 +114,12 @@ export async function success(
 
         // Add comment if configured
         if (addComment) {
-          const comment = formatComment(version, channel, nextRelease);
+          const comment = formatComment(
+            version,
+            channel,
+            nextRelease,
+            branch.name,
+          );
           await client.addComment(issue.id, comment);
         }
 
@@ -144,11 +177,13 @@ function formatComment(
   version: string,
   channel: string,
   release: SuccessContext["nextRelease"],
+  branchName: string,
 ): string {
   const emoji = channel === "latest" ? "🚀" : "🔬";
   const channelText = channel === "latest" ? "stable" : channel;
 
   let comment = `${emoji} **Released in \`v${version}\`** (${channelText})\n\n`;
+  comment += `📌 Released from branch: \`${branchName}\`\n\n`;
 
   const githubRepo = process.env.GITHUB_REPOSITORY;
   if (release.gitTag && githubRepo) {

@@ -9,3 +9,6 @@ dist/
 
 # IDE
 .vscode/
+
+# Test project
+test-project/
