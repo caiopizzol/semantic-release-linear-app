@@ -25,11 +25,18 @@ export async function verifyConditions(
   }
 
   // Validate team keys format if provided
-  if (teamKeys.length > 0 && !teamKeys.every((key) => /^[A-Z]+$/.test(key))) {
+  const teamKeyPattern = /^[A-Z]+$/;
+  const branchPattern = /^[A-Za-z0-9._-]+\/[A-Za-z0-9][A-Za-z0-9._-]*$/;
+  const invalidTeamKeys = teamKeys.filter(
+    (key) => !teamKeyPattern.test(key) && !branchPattern.test(key),
+  );
+
+  if (invalidTeamKeys.length > 0) {
     throw new SemanticReleaseError(
       "Invalid team key format",
       "EINVALIDTEAMKEY",
-      `Team keys must be uppercase letters only. Got: ${teamKeys.join(", ")}`,
+      "Team keys must be uppercase letters (e.g. SD) or branch names (e.g. caio/tk-519-title). " +
+        `Invalid: ${invalidTeamKeys.join(", ")}`,
     );
   }
 

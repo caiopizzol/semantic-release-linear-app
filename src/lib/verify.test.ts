@@ -10,6 +10,12 @@ jest.mock("@semantic-release/error", () => {
   return { __esModule: true, default: SemanticReleaseError };
 });
 
+jest.mock("./linear-client", () => ({
+  LinearClient: jest.fn().mockImplementation(() => ({
+    testConnection: jest.fn().mockResolvedValue({}),
+  })),
+}));
+
 jest.mock("node-fetch", () => ({ __esModule: true, default: jest.fn() }));
 
 import { verifyConditions } from "./verify";
@@ -35,5 +41,18 @@ describe("verify", () => {
     await expect(
       verifyConditions({ apiKey: "test", teamKeys: ["eng-123"] }, mockContext),
     ).rejects.toThrow("Invalid team key format");
+  });
+
+  test("accepts valid branch like team key", async () => {
+    // Accepts branch patterns without hitting API
+    await expect(
+      verifyConditions(
+        {
+          apiKey: "test",
+          teamKeys: ["caio/tk-519-title"],
+        },
+        mockContext,
+      ),
+    ).resolves.toBeUndefined();
   });
 });
