@@ -1,38 +1,70 @@
 import { SuccessContext } from "semantic-release";
+import { execa } from "execa";
 import { LinearClient } from "./linear-client";
-import { parseIssuesFromBranch, shouldProcessBranch } from "./parse-issues";
-import {
-  PluginConfig,
-  LinearContext,
-  IssueUpdateResult,
-  ReleaseType,
-} from "../types";
+import { parseIssuesFromBranch } from "./parse-issues";
+import { PluginConfig, LinearContext, ReleaseType } from "../types";
 
 interface ExtendedContext extends SuccessContext {
   linear?: LinearContext;
-  branch: {
-    name: string;
-    [key: string]: unknown;
-  };
+}
+
+/**
+ * Find source branches that contain the given commits
+ */
+async function findSourceBranches(
+  commits: readonly { hash: string }[],
+  logger: SuccessContext["logger"],
+): Promise<Set<string>> {
+  const branches = new Set<string>();
+
+  if (commits.length === 0) return branches;
+
+  try {
+    // Get all branches that contain these commits
+    const { stdout } = await execa("git", [
+      "branch",
+      "-r",
+      "--contains",
+      commits[0].hash,
+      "--merged",
+    ]);
+
+    // Parse remote branch names
+    const branchLines = stdout.split("\n").map((b: string) => b.trim());
+    for (const line of branchLines) {
+      // Extract branch name from origin/feature/ENG-123-description
+      const match = line.match(/origin\/(.+)/);
+      if (
+        match &&
+        !["main", "master", "develop", "stable", "HEAD"].includes(match[1])
+      ) {
+        branches.add(match[1]);
+        logger.log(`Found source branch: ${match[1]}`);
+      }
+    }
+  } catch (error) {
+    logger.debug(`Git branch lookup failed: ${(error as Error).message}`);
+  }
+
+  return branches;
 }
 
 /**
  * Update Linear issues after a successful release
- * Only uses branch name for issue detection - single source of truth
  */
 export async function success(
   pluginConfig: PluginConfig,
   context: ExtendedContext,
 ): Promise<void> {
-  const { logger, nextRelease, linear, branch } = context;
+  const { logger, nextRelease, linear, commits } = context;
 
   if (!linear) {
     logger.log("Linear context not found, skipping issue updates");
     return;
   }
 
-  if (!branch.name) {
-    logger.log("No branch name available, skipping Linear updates");
+  if (!commits || commits.length === 0) {
+    logger.log("No commits found in release, skipping Linear updates");
     return;
   }
 
@@ -40,67 +72,61 @@ export async function success(
     removeOldLabels = true,
     addComment = false,
     dryRun = false,
-    skipBranches = ["main", "master", "develop", "staging", "production"],
-    requireIssueInBranch = true,
   } = pluginConfig;
 
-  // Check if this branch should be processed
-  if (requireIssueInBranch && !shouldProcessBranch(branch.name, skipBranches)) {
+  // Find all branches that contributed to this release
+  const sourceBranches = await findSourceBranches(commits, logger);
+
+  if (sourceBranches.size === 0) {
+    logger.log("No source branches found, skipping Linear updates");
+    return;
+  }
+
+  // Extract Linear issue IDs from all found branches
+  const issueIds = new Set<string>();
+  for (const branchName of Array.from(sourceBranches)) {
+    const branchIssues = parseIssuesFromBranch(branchName, linear.teamKeys);
+    branchIssues.forEach((id) => issueIds.add(id));
+  }
+
+  if (issueIds.size === 0) {
     logger.log(
-      `Branch "${branch.name}" doesn't contain Linear issues or is in skip list, skipping updates`,
+      `No Linear issues found in branches: ${Array.from(sourceBranches).join(", ")}`,
     );
     return;
   }
 
-  const client = new LinearClient(linear.apiKey);
-  const version = nextRelease.version;
-  const channel = nextRelease.channel || "latest";
-
-  // Format the label based on configuration
-  const labelName = `${linear.labelPrefix}${version}`;
-  const labelColor = getLabelColor(nextRelease.type as ReleaseType);
-
   logger.log(
-    `Updating Linear issues for release ${version} (${channel}) from branch "${branch.name}"`,
-  );
-
-  // Extract issue IDs from branch name ONLY
-  const issueIds = parseIssuesFromBranch(branch.name, linear.teamKeys);
-
-  if (issueIds.length === 0) {
-    logger.log(`No Linear issues found in branch name "${branch.name}"`);
-    if (requireIssueInBranch) {
-      logger.warn(
-        "⚠️  Consider using branch names like: feature/ENG-123-description",
-      );
-    }
-    return;
-  }
-
-  logger.log(
-    `Found ${issueIds.length} Linear issue(s) in branch "${branch.name}": ${issueIds.join(", ")}`,
+    `Found ${issueIds.size} Linear issue(s): ${Array.from(issueIds).join(", ")} ` +
+      `from ${sourceBranches.size} branch(es)`,
   );
 
   if (dryRun) {
-    logger.log("[Dry run] Would update issues:", issueIds);
-    logger.log(`[Dry run] Would apply label: ${labelName}`);
-    logger.log(`[Dry run] Branch: ${branch.name}`);
+    logger.log("[Dry run] Would update issues:", Array.from(issueIds));
+    logger.log(
+      `[Dry run] Would apply label: ${linear.labelPrefix}${nextRelease.version}`,
+    );
     return;
   }
+
+  // Initialize Linear client and prepare label
+  const client = new LinearClient(linear.apiKey);
+  const version = nextRelease.version;
+  const channel = nextRelease.channel || "latest";
+  const labelName = `${linear.labelPrefix}${version}`;
+  const labelColor = getLabelColor(nextRelease.type as ReleaseType);
 
   // Ensure the version label exists
   const label = await client.ensureLabel(labelName, labelColor);
   logger.log(`✓ Ensured label exists: ${labelName}`);
 
-  // Update each issue
+  // Update each Linear issue
   const results = await Promise.allSettled(
-    issueIds.map(async (issueId): Promise<IssueUpdateResult> => {
+    Array.from(issueIds).map(async (issueId) => {
       try {
-        // Get the issue first
         const issue = await client.getIssue(issueId);
-
         if (!issue) {
-          logger.warn(`Issue ${issueId} not found in Linear, skipping`);
+          logger.warn(`Issue ${issueId} not found in Linear`);
           return { issueId, status: "not_found" };
         }
 
@@ -114,12 +140,10 @@ export async function success(
 
         // Add comment if configured
         if (addComment) {
-          const comment = formatComment(
-            version,
-            channel,
-            nextRelease,
-            branch.name,
-          );
+          const emoji = channel === "latest" ? "🚀" : "🔬";
+          const channelText =
+            channel === "latest" ? "" : ` (${channel} channel)`;
+          const comment = `${emoji} Released in version ${version}${channelText}`;
           await client.addComment(issue.id, comment);
         }
 
@@ -135,17 +159,13 @@ export async function success(
 
   // Log summary
   const updated = results.filter(
-    (r) => r.status === "fulfilled" && r.value.status === "updated",
+    (r) => r.status === "fulfilled" && r.value?.status === "updated",
   ).length;
-
   const failed = results.filter(
-    (r) =>
-      r.status === "rejected" ||
-      (r.status === "fulfilled" && r.value.status === "failed"),
+    (r) => r.status === "rejected" || r.value?.status === "failed",
   ).length;
-
   const notFound = results.filter(
-    (r) => r.status === "fulfilled" && r.value.status === "not_found",
+    (r) => r.status === "fulfilled" && r.value?.status === "not_found",
   ).length;
 
   logger.log(
@@ -168,27 +188,4 @@ function getLabelColor(releaseType: ReleaseType): string {
   };
 
   return colors[releaseType] || "#4752C4"; // Default blue
-}
-
-/**
- * Format comment for Linear issue
- */
-function formatComment(
-  version: string,
-  channel: string,
-  release: SuccessContext["nextRelease"],
-  branchName: string,
-): string {
-  const emoji = channel === "latest" ? "🚀" : "🔬";
-  const channelText = channel === "latest" ? "stable" : channel;
-
-  let comment = `${emoji} **Released in \`v${version}\`** (${channelText})\n\n`;
-  comment += `📌 Released from branch: \`${branchName}\`\n\n`;
-
-  const githubRepo = process.env.GITHUB_REPOSITORY;
-  if (release.gitTag && githubRepo) {
-    comment += `[View release →](https://github.com/${githubRepo}/releases/tag/${release.gitTag})`;
-  }
-
-  return comment;
 }

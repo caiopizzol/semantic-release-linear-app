@@ -46,6 +46,7 @@
     },
     "dependencies": {
         "@semantic-release/error": "^4.0.0",
+        "execa": "^9.6.0",
         "node-fetch": "^3.3.2"
     },
     "devDependencies": {
