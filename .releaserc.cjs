@@ -22,16 +22,15 @@ const config = {
   ],
 }
 
-// changelog and git for non-prerelease branches
+// git commit for non-prerelease branches (updates package.json version)
 const isPrerelease = config.branches.some(
   (b) => typeof b === 'object' && b.name === branch && b.prerelease
 )
 
 if (!isPrerelease) {
-  config.plugins.push(['@semantic-release/changelog', { changelogFile: 'CHANGELOG.md' }])
   config.plugins.push(['@semantic-release/git', {
-    assets: ['CHANGELOG.md', 'package.json'],
-    message: 'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}',
+    assets: ['package.json'],
+    message: 'chore(release): ${nextRelease.version} [skip ci]',
   }])
 }
 config.plugins.push('@semantic-release/github')

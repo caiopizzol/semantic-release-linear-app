@@ -1,21 +1,20 @@
-# semantic-release-linear
+# semantic-release-linear-app
 
 > A [semantic-release](https://github.com/semantic-release/semantic-release) plugin that updates Linear issues with version labels based on branch names.
 
 ## Features
 
-- 🌿 Extracts Linear issue IDs from branch names
-- 🏷️ Automatically adds version labels to Linear issues
-- 🎨 Color-coded labels based on release type
-- 🧹 Removes old version labels (configurable)
-- 💬 Adds release comments to issues (optional)
-- ⚡ Batch operations for efficiency
-- 📝 Full TypeScript support
+- Extracts Linear issue IDs from branch names
+- Adds version labels to Linear issues (e.g., `v1.2.3` or `v1.2.3-beta`)
+- Color-coded labels based on release type
+- Supports multiple release channels (beta, next, stable, etc.)
+- Removes old version labels (configurable)
+- Adds release comments to issues (optional)
 
 ## Install
 
 ```bash
-npm install --save-dev semantic-release-linear
+npm install --save-dev semantic-release-linear-app
 ```
 
 ## Quick Start
@@ -27,7 +26,7 @@ npm install --save-dev semantic-release-linear
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
-    ["semantic-release-linear", {
+    ["semantic-release-linear-app", {
       "teamKeys": ["ENG", "FEAT", "BUG"]
     }],
     "@semantic-release/github"
@@ -62,28 +61,25 @@ That's it! When semantic-release creates a release from these branches, the corr
 | `labelPrefix` | `"v"` | Prefix for version labels |
 | `removeOldLabels` | `true` | Remove previous version labels |
 | `addComment` | `false` | Add a release comment to issues |
-| `skipBranches` | `["main", "master", "develop", "staging", "production"]` | Branches to skip unless they contain issues |
-| `requireIssueInBranch` | `true` | Only process branches with Linear issues |
 | `dryRun` | `false` | Preview without making changes |
 
 ### TypeScript Configuration
 
 ```typescript
 // .releaserc.ts
-import type { PluginConfig } from 'semantic-release-linear';
+import type { PluginConfig } from 'semantic-release-linear-app';
 
 const config: PluginConfig = {
   teamKeys: ['ENG', 'FEAT'],
-  labelPrefix: 'release-',
-  addComment: true,
-  skipBranches: ['main', 'develop']
+  labelPrefix: 'v',
+  addComment: true
 };
 
 export default {
   plugins: [
     '@semantic-release/commit-analyzer',
     '@semantic-release/release-notes-generator',
-    ['semantic-release-linear', config],
+    ['semantic-release-linear-app', config],
     '@semantic-release/github'
   ]
 };
@@ -138,29 +134,41 @@ fi
 
 ## How It Works
 
-1. **Branch Detection**: When semantic-release runs, it reads the current branch name
-2. **Issue Extraction**: Extracts Linear issue IDs (e.g., `ENG-123`) from the branch
-3. **Label Creation**: Creates a version label if needed (e.g., `v1.2.3`)
-4. **Issue Update**: Applies the label to the Linear issue(s)
-5. **Cleanup**: Optionally removes old version labels
+1. **Commit Analysis**: When semantic-release creates a release, the plugin scans all commits
+2. **Branch Detection**: Finds all source branches that contributed commits to this release
+3. **Issue Extraction**: Extracts Linear issue IDs (e.g., `ENG-123`) from branch names
+4. **Label Creation**: Creates a version label (e.g., `v1.2.3` or `v1.2.3-beta`)
+5. **Issue Update**: Applies the label to the Linear issue(s)
+6. **Cleanup**: Optionally removes old version labels
+
+### Channel Labels
+
+When releasing to different channels, labels include the channel suffix:
+
+| Channel | Label Example |
+|---------|---------------|
+| Default (latest) | `v1.2.3` |
+| beta | `v1.2.3-beta` |
+| next | `v1.2.3-next` |
+| alpha | `v1.2.3-alpha` |
 
 ### Label Colors
 
 Labels are color-coded by release type:
 
-- 🔴 **Major** (breaking changes) - Red
-- 🟠 **Minor** (new features) - Orange  
-- 🟢 **Patch** (bug fixes) - Green
-- 🟣 **Prerelease** - Purple
+- **Major** (breaking changes) - Red
+- **Minor** (new features) - Orange
+- **Patch** (bug fixes) - Green
+- **Prerelease** - Purple
 
 ## Dry Run Mode
 
 Test what will happen without making changes:
 
-```javascript
+```json
 {
   "plugins": [
-    ["semantic-release-linear", {
+    ["semantic-release-linear-app", {
       "dryRun": true
     }]
   ]
@@ -169,9 +177,9 @@ Test what will happen without making changes:
 
 Output:
 ```
-[semantic-release] [semantic-release-linear] Found 1 Linear issue(s) in branch "feature/ENG-123-auth": ENG-123
-[semantic-release] [semantic-release-linear] [Dry run] Would update issues: ["ENG-123"]
-[semantic-release] [semantic-release-linear] [Dry run] Would apply label: v1.2.3
+[semantic-release-linear-app] Found 1 Linear issue(s): ENG-123 from 1 branch(es)
+[semantic-release-linear-app] [Dry run] Would update issues: ["ENG-123"]
+[semantic-release-linear-app] [Dry run] Would apply label: v1.2.3
 ```
 
 ## Linear API Setup
@@ -223,14 +231,6 @@ Extracting from commits is unreliable - developers forget, commits get squashed,
 - Visible in PR lists
 - A single source of truth
 
-### What about releases from main/master?
-
-You have three options:
-
-1. **Skip them** (default): Set `requireIssueInBranch: true`
-2. **Tag main with an issue**: `git checkout main-ENG-123`  
-3. **Allow all branches**: Set `requireIssueInBranch: false`
-
 ### Can I update multiple issues?
 
 Yes, include multiple issue IDs in your branch name:
@@ -240,7 +240,7 @@ feature/ENG-123-FEAT-456-big-feature
 
 ### What if my branch doesn't have an issue?
 
-The plugin will skip it (unless `requireIssueInBranch: false`). This is intentional - not every release needs to update Linear.
+The plugin will skip branches without Linear issue IDs. This is intentional - not every release needs to update Linear.
 
 ## Troubleshooting
 
