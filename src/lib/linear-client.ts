@@ -181,8 +181,8 @@ export class LinearClient {
     if (versionLabels.length === 0) return issue;
 
     const mutation = `
-      mutation RemoveLabels($issueId: String!, $labelIds: [String!]!) {
-        issueRemoveLabel(id: $issueId, labelIds: $labelIds) {
+      mutation RemoveLabel($issueId: String!, $labelId: String!) {
+        issueRemoveLabel(id: $issueId, labelId: $labelId) {
           issue {
             id
             identifier
@@ -198,12 +198,16 @@ export class LinearClient {
       }
     `;
 
-    const labelIds = versionLabels.map((label) => label.id);
-    const data = await this.query<{
-      issueRemoveLabel: { issue: LinearIssue };
-    }>(mutation, { issueId, labelIds });
+    // Remove each label individually
+    let updatedIssue = issue;
+    for (const label of versionLabels) {
+      const data = await this.query<{
+        issueRemoveLabel: { issue: LinearIssue };
+      }>(mutation, { issueId, labelId: label.id });
+      updatedIssue = data.issueRemoveLabel.issue;
+    }
 
-    return data.issueRemoveLabel.issue;
+    return updatedIssue;
   }
 
   /**
