@@ -57,3 +57,5 @@ Colors indicate release type: red (major), orange (minor), green (patch), purple
 ## License
 
 MIT
+
+<!-- SD-1135 test -->
