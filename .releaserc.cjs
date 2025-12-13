@@ -18,6 +18,7 @@ const config = {
   plugins: [
     '@semantic-release/commit-analyzer',
     '@semantic-release/release-notes-generator',
+    ['./dist/index.js', { teamKeys: ['SD'] }],
     ['@semantic-release/npm', { npmPublish: true }],
   ],
 }
