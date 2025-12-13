@@ -2,11 +2,8 @@ import { SuccessContext } from 'semantic-release';
 import { execa } from 'execa';
 import { LinearClient } from './linear-client';
 import { parseIssuesFromBranch } from './parse-issues';
-import { PluginConfig, LinearContext, ReleaseType } from '../types';
-
-interface ExtendedContext extends SuccessContext {
-  linear?: LinearContext;
-}
+import { PluginConfig, ReleaseType } from '../types';
+import { getLinearContext } from './context';
 
 /**
  * Find source branches that contain the given commits
@@ -53,8 +50,9 @@ async function findSourceBranches(
 /**
  * Update Linear issues after a successful release
  */
-export async function success(pluginConfig: PluginConfig, context: ExtendedContext): Promise<void> {
-  const { logger, nextRelease, linear, commits } = context;
+export async function success(pluginConfig: PluginConfig, context: SuccessContext): Promise<void> {
+  const { logger, nextRelease, commits } = context;
+  const linear = getLinearContext();
 
   if (!linear) {
     logger.log('Linear context not found, skipping issue updates');

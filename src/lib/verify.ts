@@ -1,14 +1,15 @@
 import SemanticReleaseError from '@semantic-release/error';
 import { VerifyConditionsContext } from 'semantic-release';
 import { LinearClient } from './linear-client';
-import { PluginConfig, LinearContext } from '../types';
+import { PluginConfig } from '../types';
+import { setLinearContext } from './context';
 
 /**
  * Verify the plugin configuration and Linear API access
  */
 export async function verifyConditions(
   pluginConfig: PluginConfig,
-  context: VerifyConditionsContext & { linear?: LinearContext },
+  context: VerifyConditionsContext,
 ): Promise<void> {
   const { logger } = context;
   const { apiKey, teamKeys = [] } = pluginConfig;
@@ -55,10 +56,10 @@ export async function verifyConditions(
     );
   }
 
-  // Store validated config in context for other lifecycle methods
-  context.linear = {
+  // Store validated config for other lifecycle methods
+  setLinearContext({
     apiKey: linearApiKey,
     teamKeys: teamKeys.length > 0 ? teamKeys : null,
     labelPrefix: pluginConfig.labelPrefix || 'v',
-  };
+  });
 }
