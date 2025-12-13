@@ -7,6 +7,7 @@ import { LinearContext } from '../types';
  */
 let linearContext: LinearContext | null = null;
 
+/** Store Linear context for access across hooks */
 export function setLinearContext(ctx: LinearContext): void {
   linearContext = ctx;
 }
