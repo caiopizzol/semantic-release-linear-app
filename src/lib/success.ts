@@ -91,12 +91,9 @@ export async function success(pluginConfig: PluginConfig, context: SuccessContex
       `from ${sourceBranches.size} branch(es)`,
   );
 
-  // Build label name with optional channel suffix
   const version = nextRelease.version;
   const channel = nextRelease.channel;
-  const labelName = channel
-    ? `${linear.labelPrefix}${version}-${channel}`
-    : `${linear.labelPrefix}${version}`;
+  const labelName = `${linear.labelPrefix}${version}`;
 
   if (dryRun) {
     logger.log('[Dry run] Would update issues:', Array.from(issueIds));
