@@ -16,12 +16,6 @@ export interface PluginConfig {
 
   /** Preview changes without updating Linear (default: false) */
   dryRun?: boolean;
-
-  /** Branches to skip unless they contain issue IDs (default: ["main", "master", "develop", "staging", "production"]) */
-  skipBranches?: string[];
-
-  /** Require issues in branch name to process (default: true) */
-  requireIssueInBranch?: boolean;
 }
 
 export interface LinearContext {
@@ -45,22 +39,16 @@ export interface LinearLabel {
   color?: string;
 }
 
-export interface IssueUpdateResult {
-  issueId: string;
-  status: "updated" | "failed" | "not_found";
-  error?: string;
-}
-
 export interface LinearViewer {
   id: string;
   name: string;
 }
 
 export type ReleaseType =
-  | "major"
-  | "premajor"
-  | "minor"
-  | "preminor"
-  | "patch"
-  | "prepatch"
-  | "prerelease";
+  | 'major'
+  | 'premajor'
+  | 'minor'
+  | 'preminor'
+  | 'patch'
+  | 'prepatch'
+  | 'prerelease';

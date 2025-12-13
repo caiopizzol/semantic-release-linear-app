@@ -1,5 +1,5 @@
-import fetch from "node-fetch";
-import { LinearIssue, LinearLabel, LinearViewer } from "../types";
+import fetch from 'node-fetch';
+import { LinearIssue, LinearLabel, LinearViewer } from '../types';
 
 interface GraphQLResponse<T> {
   data?: T;
@@ -11,7 +11,7 @@ interface GraphQLResponse<T> {
  */
 export class LinearClient {
   private apiKey: string;
-  private apiUrl: string = "https://api.linear.app/graphql";
+  private apiUrl: string = 'https://api.linear.app/graphql';
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
@@ -25,10 +25,10 @@ export class LinearClient {
     variables: Record<string, unknown> = {},
   ): Promise<T> {
     const response = await fetch(this.apiUrl, {
-      method: "POST",
+      method: 'POST',
       headers: {
         Authorization: this.apiKey,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ query, variables }),
     });
@@ -40,7 +40,7 @@ export class LinearClient {
     }
 
     if (!data.data) {
-      throw new Error("No data returned from Linear API");
+      throw new Error('No data returned from Linear API');
     }
 
     return data.data;
@@ -66,10 +66,7 @@ export class LinearClient {
   /**
    * Find or create a label
    */
-  async ensureLabel(
-    name: string,
-    color: string = "#4752C4",
-  ): Promise<LinearLabel> {
+  async ensureLabel(name: string, color: string = '#4752C4'): Promise<LinearLabel> {
     // First, try to find existing label
     const searchQuery = `
       query FindLabel($name: String!) {
@@ -143,10 +140,7 @@ export class LinearClient {
   /**
    * Add label to issue
    */
-  async addLabelToIssue(
-    issueId: string,
-    labelId: string,
-  ): Promise<LinearIssue> {
+  async addLabelToIssue(issueId: string, labelId: string): Promise<LinearIssue> {
     const mutation = `
       mutation AddLabel($issueId: String!, $labelId: String!) {
         issueUpdate(
@@ -178,22 +172,17 @@ export class LinearClient {
   /**
    * Remove old version labels from issue
    */
-  async removeVersionLabels(
-    issueId: string,
-    labelPrefix: string,
-  ): Promise<LinearIssue | null> {
+  async removeVersionLabels(issueId: string, labelPrefix: string): Promise<LinearIssue | null> {
     const issue = await this.getIssue(issueId);
     if (!issue) return null;
 
-    const versionLabels = issue.labels.nodes.filter((label) =>
-      label.name.startsWith(labelPrefix),
-    );
+    const versionLabels = issue.labels.nodes.filter((label) => label.name.startsWith(labelPrefix));
 
     if (versionLabels.length === 0) return issue;
 
     const mutation = `
-      mutation RemoveLabels($issueId: String!, $labelIds: [String!]!) {
-        issueRemoveLabel(id: $issueId, labelIds: $labelIds) {
+      mutation RemoveLabel($issueId: String!, $labelId: String!) {
+        issueRemoveLabel(id: $issueId, labelId: $labelId) {
           issue {
             id
             identifier
@@ -209,12 +198,16 @@ export class LinearClient {
       }
     `;
 
-    const labelIds = versionLabels.map((label) => label.id);
-    const data = await this.query<{
-      issueRemoveLabel: { issue: LinearIssue };
-    }>(mutation, { issueId, labelIds });
+    // Remove each label individually
+    let updatedIssue = issue;
+    for (const label of versionLabels) {
+      const data = await this.query<{
+        issueRemoveLabel: { issue: LinearIssue };
+      }>(mutation, { issueId, labelId: label.id });
+      updatedIssue = data.issueRemoveLabel.issue;
+    }
 
-    return data.issueRemoveLabel.issue;
+    return updatedIssue;
   }
 
   /**
