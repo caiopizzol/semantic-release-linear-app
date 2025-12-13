@@ -1,7 +1,7 @@
-import SemanticReleaseError from "@semantic-release/error";
-import { VerifyConditionsContext } from "semantic-release";
-import { LinearClient } from "./linear-client";
-import { PluginConfig, LinearContext } from "../types";
+import SemanticReleaseError from '@semantic-release/error';
+import { VerifyConditionsContext } from 'semantic-release';
+import { LinearClient } from './linear-client';
+import { PluginConfig, LinearContext } from '../types';
 
 /**
  * Verify the plugin configuration and Linear API access
@@ -18,9 +18,9 @@ export async function verifyConditions(
 
   if (!linearApiKey) {
     throw new SemanticReleaseError(
-      "No Linear API key found",
-      "ENOLINEARTOKEN",
-      "Please provide a Linear API key via plugin config or LINEAR_API_KEY environment variable.",
+      'No Linear API key found',
+      'ENOLINEARTOKEN',
+      'Please provide a Linear API key via plugin config or LINEAR_API_KEY environment variable.',
     );
   }
 
@@ -33,10 +33,10 @@ export async function verifyConditions(
 
   if (invalidTeamKeys.length > 0) {
     throw new SemanticReleaseError(
-      "Invalid team key format",
-      "EINVALIDTEAMKEY",
-      "Team keys must be uppercase letters (e.g. SD) or branch names (e.g. caio/tk-519-title). " +
-        `Invalid: ${invalidTeamKeys.join(", ")}`,
+      'Invalid team key format',
+      'EINVALIDTEAMKEY',
+      'Team keys must be uppercase letters (e.g. SD) or branch names (e.g. caio/tk-519-title). ' +
+        `Invalid: ${invalidTeamKeys.join(', ')}`,
     );
   }
 
@@ -44,13 +44,13 @@ export async function verifyConditions(
   const client = new LinearClient(linearApiKey);
 
   try {
-    logger.log("Verifying Linear API access...");
+    logger.log('Verifying Linear API access...');
     await client.testConnection();
-    logger.log("✓ Linear API access verified");
+    logger.log('✓ Linear API access verified');
   } catch (error) {
     throw new SemanticReleaseError(
-      "Failed to connect to Linear API",
-      "ELINEARCONNECTION",
+      'Failed to connect to Linear API',
+      'ELINEARCONNECTION',
       `Could not connect to Linear API: ${(error as Error).message}`,
     );
   }
@@ -59,6 +59,6 @@ export async function verifyConditions(
   context.linear = {
     apiKey: linearApiKey,
     teamKeys: teamKeys.length > 0 ? teamKeys : null,
-    labelPrefix: pluginConfig.labelPrefix || "v",
+    labelPrefix: pluginConfig.labelPrefix || 'v',
   };
 }
