@@ -16,12 +16,20 @@ export interface PluginConfig {
 
   /** Preview changes without updating Linear (default: false) */
   dryRun?: boolean;
+
+  /** GitHub token for API access (falls back to GITHUB_TOKEN env var) */
+  githubToken?: string;
+
+  /** GitHub API URL for Enterprise (default: https://api.github.com) */
+  githubApiUrl?: string;
 }
 
 export interface LinearContext {
   apiKey: string;
   teamKeys: string[] | null;
   labelPrefix: string;
+  githubToken: string | null;
+  githubApiUrl: string;
 }
 
 export interface LinearIssue {

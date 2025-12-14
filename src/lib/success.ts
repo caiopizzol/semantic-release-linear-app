@@ -1,47 +1,43 @@
 import { SuccessContext } from 'semantic-release';
-import { execa } from 'execa';
 import { LinearClient } from './linear-client.js';
+import { GitHubClient, parseGitHubUrl } from './github-client.js';
 import { parseIssuesFromBranch } from './parse-issues.js';
 import { PluginConfig, ReleaseType } from '../types.js';
 import { getLinearContext } from './context.js';
 
 /**
- * Find source branches that contain the given commits
+ * Find source branches via GitHub API using associated PRs
  */
 async function findSourceBranches(
   commits: readonly { hash: string }[],
+  githubToken: string,
+  githubApiUrl: string,
+  repositoryUrl: string | undefined,
   logger: SuccessContext['logger'],
 ): Promise<Set<string>> {
   const branches = new Set<string>();
-  const skipBranches = ['main', 'master', 'develop', 'stable', 'HEAD'];
 
   if (commits.length === 0) return branches;
 
-  // Check all commits to find all source branches
-  for (const commit of commits) {
-    try {
-      const { stdout } = await execa('git', [
-        'branch',
-        '-r',
-        '--contains',
-        commit.hash,
-        '--merged',
-      ]);
-
-      const branchLines = stdout.split('\n').map((b: string) => b.trim());
-      for (const line of branchLines) {
-        const match = line.match(/origin\/(.+)/);
-        if (match && !skipBranches.includes(match[1])) {
-          branches.add(match[1]);
-        }
-      }
-    } catch {
-      // Commit might not exist or other git error, continue with next commit
-    }
+  const parsed = parseGitHubUrl(repositoryUrl || '');
+  if (!parsed) {
+    logger.log('Could not parse GitHub repository URL, skipping branch lookup');
+    return branches;
   }
 
-  if (branches.size > 0) {
-    logger.log(`Found source branches: ${Array.from(branches).join(', ')}`);
+  const client = new GitHubClient(githubToken, githubApiUrl);
+  const commitShas = commits.map((c) => c.hash);
+
+  try {
+    const branchNames = await client.getAssociatedPRBranches(parsed.owner, parsed.repo, commitShas);
+    branchNames.forEach((b) => branches.add(b));
+
+    if (branches.size > 0) {
+      logger.log(`Found source branches via GitHub API: ${Array.from(branches).join(', ')}`);
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.log(`GitHub API error: ${message}`);
   }
 
   return branches;
@@ -66,8 +62,21 @@ export async function success(pluginConfig: PluginConfig, context: SuccessContex
 
   const { removeOldLabels = true, addComment = false, dryRun = false } = pluginConfig;
 
-  // Find all branches that contributed to this release
-  const sourceBranches = await findSourceBranches(commits, logger);
+  // Check for GitHub token
+  if (!linear.githubToken) {
+    logger.log('No GITHUB_TOKEN found, skipping Linear updates');
+    return;
+  }
+
+  // Find all branches that contributed to this release via GitHub API
+  const repositoryUrl = context.options?.repositoryUrl;
+  const sourceBranches = await findSourceBranches(
+    commits,
+    linear.githubToken,
+    linear.githubApiUrl,
+    repositoryUrl,
+    logger,
+  );
 
   if (sourceBranches.size === 0) {
     logger.log('No source branches found, skipping Linear updates');
