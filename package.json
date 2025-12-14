@@ -2,6 +2,7 @@
     "name": "semantic-release-linear-app",
     "version": "0.3.0",
     "description": "Semantic-release plugin to update Linear issues with version labels",
+    "type": "module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "engines": {
@@ -17,13 +18,27 @@
         "lint": "eslint src/**/*.ts",
         "format": "prettier --write src/**/*.ts",
         "prepare": "husky",
-        "test": "jest",
+        "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
         "test:watch": "jest --watch",
         "validate": "pnpm lint && pnpm type-check && pnpm build && pnpm test"
     },
     "jest": {
-        "preset": "ts-jest",
+        "preset": "ts-jest/presets/default-esm",
         "testEnvironment": "node",
+        "extensionsToTreatAsEsm": [
+            ".ts"
+        ],
+        "moduleNameMapper": {
+            "^(\\.{1,2}/.*)\\.js$": "$1"
+        },
+        "transform": {
+            "^.+\\.tsx?$": [
+                "ts-jest",
+                {
+                    "useESM": true
+                }
+            ]
+        },
         "testMatch": [
             "**/*.test.ts"
         ]
@@ -51,6 +66,7 @@
         "node-fetch": "^3.3.2"
     },
     "devDependencies": {
+        "@jest/globals": "^30.2.0",
         "@semantic-release/commit-analyzer": "^13.0.1",
         "@semantic-release/git": "^10.0.1",
         "@semantic-release/github": "^12.0.2",

@@ -1,8 +1,8 @@
 import SemanticReleaseError from '@semantic-release/error';
 import { VerifyConditionsContext } from 'semantic-release';
-import { LinearClient } from './linear-client';
-import { PluginConfig } from '../types';
-import { setLinearContext } from './context';
+import { LinearClient } from './linear-client.js';
+import { PluginConfig } from '../types.js';
+import { setLinearContext } from './context.js';
 
 /**
  * Verify the plugin configuration and Linear API access

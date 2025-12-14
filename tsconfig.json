@@ -4,11 +4,13 @@
         "lib": [
             "ES2022"
         ],
-        "module": "commonjs",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
         "outDir": "./dist",
         "rootDir": "./src",
         "declaration": true,
         "strict": true,
+        "isolatedModules": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true

@@ -1,4 +1,5 @@
-import { parseIssuesFromBranch } from './parse-issues';
+import { describe, test, expect } from '@jest/globals';
+import { parseIssuesFromBranch } from './parse-issues.js';
 
 describe('parse-issues', () => {
   test('extracts Linear issue IDs from branch name', () => {
