@@ -45,6 +45,29 @@ ENG-789
 | `addComment` | `false` | Add release comment to issues |
 | `dryRun` | `false` | Preview without making changes |
 
+## How it Works
+
+This plugin hooks into two semantic-release lifecycle stages:
+
+```mermaid
+flowchart LR
+    subgraph semantic-release
+        A[verifyConditions] --> B[analyzeCommits]
+        B --> C[generateNotes]
+        C --> D[publish]
+        D --> E[success]
+    end
+
+    A -. "validate Linear auth" .-> A
+    E -. "update Linear issues" .-> E
+```
+
+1. **verifyConditions** - Validates your `LINEAR_TOKEN` and tests the API connection
+2. **success** - After release is published:
+   - Finds branches containing the release commits
+   - Extracts issue IDs from branch names (e.g., `ENG-123`)
+   - Creates/applies version label to each issue
+
 ## Labels
 
 Labels are created based on version and channel:
