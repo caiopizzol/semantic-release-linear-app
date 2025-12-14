@@ -12,16 +12,16 @@ export async function verifyConditions(
   context: VerifyConditionsContext,
 ): Promise<void> {
   const { logger } = context;
-  const { apiKey, teamKeys = [] } = pluginConfig;
+  const { token, teamKeys = [] } = pluginConfig;
 
-  // Check for API key in config or environment
-  const linearApiKey = apiKey || process.env.LINEAR_API_KEY;
+  // Check for token in config or environment
+  const linearToken = token || process.env.LINEAR_TOKEN;
 
-  if (!linearApiKey) {
+  if (!linearToken) {
     throw new SemanticReleaseError(
-      'No Linear API key found',
+      'No Linear token found',
       'ENOLINEARTOKEN',
-      'Please provide a Linear API key via plugin config or LINEAR_API_KEY environment variable.',
+      'Please provide LINEAR_TOKEN environment variable.',
     );
   }
 
@@ -42,7 +42,7 @@ export async function verifyConditions(
   }
 
   // Test API connection
-  const client = new LinearClient(linearApiKey);
+  const client = new LinearClient(linearToken);
 
   try {
     logger.log('Verifying Linear API access...');
@@ -58,7 +58,7 @@ export async function verifyConditions(
 
   // Store validated config for other lifecycle methods
   setLinearContext({
-    apiKey: linearApiKey,
+    apiKey: linearToken,
     teamKeys: teamKeys.length > 0 ? teamKeys : null,
     labelPrefix: pluginConfig.labelPrefix || 'v',
   });
