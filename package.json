@@ -18,7 +18,8 @@
         "format": "prettier --write src/**/*.ts",
         "prepare": "husky",
         "test": "jest",
-        "test:watch": "jest --watch"
+        "test:watch": "jest --watch",
+        "validate": "pnpm lint && pnpm type-check && pnpm build && pnpm test"
     },
     "jest": {
         "preset": "ts-jest",
@@ -77,8 +78,7 @@
     "lint-staged": {
         "*.ts": [
             "eslint --fix",
-            "prettier --write",
-            "tsc --noEmit"
+            "prettier --write"
         ]
     }
 }
