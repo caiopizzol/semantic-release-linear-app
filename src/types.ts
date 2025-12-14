@@ -1,6 +1,6 @@
 export interface PluginConfig {
-  /** Linear API key (can also use LINEAR_API_KEY env var) */
-  apiKey?: string;
+  /** Linear token - API key or OAuth access token (can also use LINEAR_TOKEN env var) */
+  token?: string;
 
   /** Team keys to filter issues (e.g., ["ENG", "FEAT"]) */
   teamKeys?: string[];
