@@ -27,17 +27,17 @@ describe('verify', () => {
   } as VerifyConditionsContext;
 
   beforeEach(() => {
-    delete process.env.LINEAR_API_KEY;
+    delete process.env.LINEAR_TOKEN;
   });
 
-  test('throws without API key', async () => {
-    await expect(verifyConditions({}, mockContext)).rejects.toThrow('No Linear API key found');
+  test('throws without token', async () => {
+    await expect(verifyConditions({}, mockContext)).rejects.toThrow('No Linear token found');
   });
 
   test('validates team key format', async () => {
     // Validation happens BEFORE the API call, so it fails fast
     await expect(
-      verifyConditions({ apiKey: 'test', teamKeys: ['eng-123'] }, mockContext),
+      verifyConditions({ token: 'test', teamKeys: ['eng-123'] }, mockContext),
     ).rejects.toThrow('Invalid team key format');
   });
 
@@ -46,7 +46,7 @@ describe('verify', () => {
     await expect(
       verifyConditions(
         {
-          apiKey: 'test',
+          token: 'test',
           teamKeys: ['caio/tk-519-title'],
         },
         mockContext,

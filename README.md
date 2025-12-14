@@ -25,7 +25,7 @@ npm install --save-dev semantic-release-linear-app
 }
 ```
 
-2. Set `LINEAR_API_KEY` environment variable (create at Linear Settings > API)
+2. Set `LINEAR_TOKEN` environment variable (see [Authentication](#authentication) below)
 
 3. Use branch names with Linear issue IDs:
 
@@ -45,6 +45,29 @@ ENG-789
 | `addComment` | `false` | Add release comment to issues |
 | `dryRun` | `false` | Preview without making changes |
 
+## How it Works
+
+This plugin hooks into two semantic-release lifecycle stages:
+
+```mermaid
+flowchart LR
+    subgraph semantic-release
+        A[verifyConditions] --> B[analyzeCommits]
+        B --> C[generateNotes]
+        C --> D[publish]
+        D --> E[success]
+    end
+
+    A -. "validate Linear auth" .-> A
+    E -. "update Linear issues" .-> E
+```
+
+1. **verifyConditions** - Validates your `LINEAR_TOKEN` and tests the API connection
+2. **success** - After release is published:
+   - Finds branches containing the release commits
+   - Extracts issue IDs from branch names (e.g., `ENG-123`)
+   - Creates/applies version label to each issue
+
 ## Labels
 
 Labels are created based on version and channel:
@@ -54,8 +77,23 @@ Labels are created based on version and channel:
 
 Colors indicate release type: red (major), orange (minor), green (patch), purple (prerelease).
 
+## Authentication
+
+Set `LINEAR_TOKEN` environment variable with either:
+
+### API Key (Simple)
+Actions appear as your personal account.
+1. Go to Linear Settings > API > Personal API keys
+2. Create new key
+3. Set as `LINEAR_TOKEN`
+
+### OAuth Access Token (Recommended for CI)
+Actions appear as your app name instead of a user.
+1. Go to Linear Settings > API > Applications
+2. Create new application, enable "Client credentials tokens"
+3. Use client credentials to get an access token ([docs](https://linear.app/developers/oauth-2-0-authentication))
+4. Set the access token as `LINEAR_TOKEN`
+
 ## License
 
 MIT
-
-<!-- SD-1135 e2e test v3 -->
