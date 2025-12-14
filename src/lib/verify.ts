@@ -56,10 +56,16 @@ export async function verifyConditions(
     );
   }
 
+  // Get GitHub config (auto-detect from environment)
+  const githubToken = pluginConfig.githubToken || process.env.GITHUB_TOKEN || null;
+  const githubApiUrl = pluginConfig.githubApiUrl || 'https://api.github.com';
+
   // Store validated config for other lifecycle methods
   setLinearContext({
     apiKey: linearToken,
     teamKeys: teamKeys.length > 0 ? teamKeys : null,
     labelPrefix: pluginConfig.labelPrefix || 'v',
+    githubToken,
+    githubApiUrl,
   });
 }
