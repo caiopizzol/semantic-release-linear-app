@@ -1,5 +1,7 @@
-// Minimal ESM mocks
-jest.mock('@semantic-release/error', () => {
+import { jest, describe, test, expect, beforeEach } from '@jest/globals';
+
+// ESM mocks must be set up before imports
+jest.unstable_mockModule('@semantic-release/error', () => {
   class SemanticReleaseError extends Error {
     code: string;
     constructor(message: string, code: string) {
@@ -7,24 +9,24 @@ jest.mock('@semantic-release/error', () => {
       this.code = code;
     }
   }
-  return { __esModule: true, default: SemanticReleaseError };
+  return { default: SemanticReleaseError };
 });
 
-jest.mock('./linear-client', () => ({
-  LinearClient: jest.fn().mockImplementation(() => ({
-    testConnection: jest.fn().mockResolvedValue({}),
+jest.unstable_mockModule('./linear-client.js', () => ({
+  LinearClient: jest.fn(() => ({
+    testConnection: jest.fn(() => Promise.resolve({})),
   })),
 }));
 
-jest.mock('node-fetch', () => ({ __esModule: true, default: jest.fn() }));
+jest.unstable_mockModule('node-fetch', () => ({ default: jest.fn() }));
 
-import { verifyConditions } from './verify';
-import { VerifyConditionsContext } from 'semantic-release';
+const { verifyConditions } = await import('./verify.js');
+import type { VerifyConditionsContext } from 'semantic-release';
 
 describe('verify', () => {
   const mockContext = {
     logger: { log: jest.fn(), error: jest.fn() },
-  } as VerifyConditionsContext;
+  } as unknown as VerifyConditionsContext;
 
   beforeEach(() => {
     delete process.env.LINEAR_TOKEN;

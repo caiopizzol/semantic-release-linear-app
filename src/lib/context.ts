@@ -1,4 +1,4 @@
-import { LinearContext } from '../types';
+import { LinearContext } from '../types.js';
 
 /**
  * Module-level storage for Linear context between semantic-release hooks.

@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { LinearIssue, LinearLabel, LinearViewer } from '../types';
+import { LinearIssue, LinearLabel, LinearViewer } from '../types.js';
 
 interface GraphQLResponse<T> {
   data?: T;

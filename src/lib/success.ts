@@ -1,9 +1,9 @@
 import { SuccessContext } from 'semantic-release';
 import { execa } from 'execa';
-import { LinearClient } from './linear-client';
-import { parseIssuesFromBranch } from './parse-issues';
-import { PluginConfig, ReleaseType } from '../types';
-import { getLinearContext } from './context';
+import { LinearClient } from './linear-client.js';
+import { parseIssuesFromBranch } from './parse-issues.js';
+import { PluginConfig, ReleaseType } from '../types.js';
+import { getLinearContext } from './context.js';
 
 /**
  * Find source branches that contain the given commits
