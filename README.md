@@ -25,7 +25,9 @@ npm install --save-dev semantic-release-linear-app
 }
 ```
 
-2. Set `LINEAR_TOKEN` environment variable (see [Authentication](#authentication) below)
+2. Set environment variables:
+   - `LINEAR_TOKEN` - Linear API key or OAuth token
+   - `GITHUB_TOKEN` - For finding PRs (usually already set in CI)
 
 3. Use branch names with Linear issue IDs:
 
@@ -47,52 +49,43 @@ ENG-789
 
 ## How it Works
 
-This plugin hooks into two semantic-release lifecycle stages:
-
 ```mermaid
 flowchart LR
+    A[Release Commit] --> B[GitHub PR]
+    B --> C[Branch Name]
+    C --> D[Issue ID]
+    D --> E[Linear Label]
+
     subgraph semantic-release
-        A[verifyConditions] --> B[analyzeCommits]
-        B --> C[generateNotes]
-        C --> D[publish]
-        D --> E[success]
+        V[verifyConditions] --> S[success]
     end
 
-    A -. "validate Linear auth" .-> A
-    E -. "update Linear issues" .-> E
+    V -.- |validate tokens| A
+    S -.- |apply labels| E
 ```
 
-1. **verifyConditions** - Validates your `LINEAR_TOKEN` and tests the API connection
-2. **success** - After release is published:
-   - Finds branches containing the release commits
+1. **verifyConditions** - Validates `LINEAR_TOKEN` and tests API connection
+2. **success** - After release:
+   - Queries GitHub for PRs associated with release commits
    - Extracts issue IDs from branch names (e.g., `ENG-123`)
-   - Creates/applies version label to each issue
+   - Creates and applies version label to each issue
 
 ## Labels
 
-Labels are created based on version and channel:
+Labels are color-coded by release type:
 
-- Default channel: `v1.2.3`
-- Beta/next channels: `v1.2.3-beta`, `v1.2.3-next`
-
-Colors indicate release type: red (major), orange (minor), green (patch), purple (prerelease).
+| Type | Color | Example |
+|------|-------|---------|
+| Major | Red | `v2.0.0` |
+| Minor | Orange | `v1.1.0` |
+| Patch | Green | `v1.0.1` |
+| Prerelease | Purple | `v1.0.0-beta.1` |
 
 ## Authentication
 
-Set `LINEAR_TOKEN` environment variable with either:
+Set `LINEAR_TOKEN` with a Linear API key or OAuth access token.
 
-### API Key (Simple)
-Actions appear as your personal account.
-1. Go to Linear Settings > API > Personal API keys
-2. Create new key
-3. Set as `LINEAR_TOKEN`
-
-### OAuth Access Token (Recommended for CI)
-Actions appear as your app name instead of a user.
-1. Go to Linear Settings > API > Applications
-2. Create new application, enable "Client credentials tokens"
-3. Use client credentials to get an access token ([docs](https://linear.app/developers/oauth-2-0-authentication))
-4. Set the access token as `LINEAR_TOKEN`
+For OAuth setup, see [Linear OAuth documentation](https://linear.app/developers/oauth-2-0-authentication).
 
 ## License
 

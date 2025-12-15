@@ -138,14 +138,21 @@ export class LinearClient {
   }
 
   /**
-   * Add label to issue
+   * Add label to issue (preserves existing labels)
    */
   async addLabelToIssue(issueId: string, labelId: string): Promise<LinearIssue> {
+    // Fetch current issue to get existing labels
+    const issue = await this.getIssue(issueId);
+    const existingLabelIds = issue?.labels.nodes.map((l) => l.id) ?? [];
+
+    // Combine existing labels with new label (avoid duplicates)
+    const allLabelIds = [...new Set([...existingLabelIds, labelId])];
+
     const mutation = `
-      mutation AddLabel($issueId: String!, $labelId: String!) {
+      mutation AddLabel($issueId: String!, $labelIds: [String!]!) {
         issueUpdate(
           id: $issueId,
-          input: { labelIds: [$labelId] }
+          input: { labelIds: $labelIds }
         ) {
           issue {
             id
@@ -164,7 +171,7 @@ export class LinearClient {
 
     const data = await this.query<{
       issueUpdate: { issue: LinearIssue };
-    }>(mutation, { issueId, labelId });
+    }>(mutation, { issueId, labelIds: allLabelIds });
 
     return data.issueUpdate.issue;
   }
