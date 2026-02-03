@@ -18,6 +18,20 @@ export class LinearClient {
   }
 
   /**
+   * Get the Authorization header value.
+   * Personal API keys (lin_api_*) are used directly.
+   * OAuth tokens need "Bearer " prefix.
+   */
+  private getAuthHeader(): string {
+    // Personal API keys start with "lin_api_"
+    if (this.apiKey.startsWith('lin_api_')) {
+      return this.apiKey;
+    }
+    // OAuth tokens need Bearer prefix
+    return `Bearer ${this.apiKey}`;
+  }
+
+  /**
    * Execute a GraphQL query
    */
   private async query<T = unknown>(
@@ -27,7 +41,7 @@ export class LinearClient {
     const response = await fetch(this.apiUrl, {
       method: 'POST',
       headers: {
-        Authorization: this.apiKey,
+        Authorization: this.getAuthHeader(),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ query, variables }),

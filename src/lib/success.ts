@@ -102,7 +102,8 @@ export async function success(pluginConfig: PluginConfig, context: SuccessContex
 
   const version = nextRelease.version;
   const channel = nextRelease.channel;
-  const labelName = `${linear.labelPrefix}${version}`;
+  const packagePrefix = linear.packageName ? `${linear.packageName}-` : '';
+  const labelName = `${packagePrefix}${linear.labelPrefix}${version}`;
 
   if (dryRun) {
     logger.log('[Dry run] Would update issues:', Array.from(issueIds));
@@ -130,7 +131,8 @@ export async function success(pluginConfig: PluginConfig, context: SuccessContex
 
         // Remove old version labels if configured
         if (removeOldLabels) {
-          await client.removeVersionLabels(issue.id, linear.labelPrefix);
+          const labelPrefixWithPackage = `${packagePrefix}${linear.labelPrefix}`;
+          await client.removeVersionLabels(issue.id, labelPrefixWithPackage);
         }
 
         // Add the new version label
@@ -140,7 +142,8 @@ export async function success(pluginConfig: PluginConfig, context: SuccessContex
         if (addComment) {
           const emoji = channel ? '🔬' : '🚀';
           const channelText = channel ? ` (${channel} channel)` : '';
-          const comment = `${emoji} Released in version ${version}${channelText}`;
+          const packageText = linear.packageName ? `**${linear.packageName}** ` : '';
+          const comment = `${emoji} Released in ${packageText}version ${version}${channelText}`;
           await client.addComment(issue.id, comment);
         }
 
