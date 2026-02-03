@@ -101,7 +101,9 @@ Labels are color-coded by release type:
 
 ## Authentication
 
-Set `LINEAR_TOKEN` with a Linear API key or OAuth access token.
+Set `LINEAR_TOKEN` with either:
+- **Personal API key** (starts with `lin_api_`) - used directly
+- **OAuth access token** - automatically adds `Bearer` prefix
 
 For OAuth setup, see [Linear OAuth documentation](https://linear.app/developers/oauth-2-0-authentication).
 
