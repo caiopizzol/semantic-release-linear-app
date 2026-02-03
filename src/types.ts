@@ -14,6 +14,20 @@ export interface PluginConfig {
   /** Add a comment to issues with release info (default: false) */
   addComment?: boolean;
 
+  /**
+   * Custom comment template with placeholders (default: "Released in {package} v{releaseLink} {channel}")
+   * Placeholders are raw values - add spaces as needed (multiple spaces are collapsed).
+   * Available placeholders:
+   * - {version} - Release version (e.g., "1.0.0")
+   * - {channel} - Release channel (e.g., "(next channel)" or "")
+   * - {package} - Package name bold (e.g., "**cli**" or "")
+   * - {packageName} - Raw package name (e.g., "cli" or "")
+   * - {releaseUrl} - GitHub release URL
+   * - {releaseLink} - Markdown link [version](url)
+   * - {gitTag} - Git tag (e.g., "cli-v1.0.0")
+   */
+  commentTemplate?: string;
+
   /** Preview changes without updating Linear (default: false) */
   dryRun?: boolean;
 

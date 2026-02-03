@@ -46,6 +46,7 @@ ENG-789
 | `packageName` | `null` | Package name for monorepos (e.g., `"superdoc"` creates `superdoc-v1.0.0`) |
 | `removeOldLabels` | `true` | Remove previous version labels |
 | `addComment` | `false` | Add release comment to issues |
+| `commentTemplate` | See below | Custom comment template with placeholders |
 | `dryRun` | `false` | Preview without making changes |
 
 ### Monorepo Support
@@ -64,6 +65,41 @@ For monorepos with multiple packages, use the `packageName` option to create pac
 ```
 
 This creates labels like `superdoc-v1.2.3` instead of just `v1.2.3`.
+
+### Comment Templates
+
+When `addComment` is enabled, you can customize the comment format using `commentTemplate`:
+
+```json
+{
+  "plugins": [
+    ["semantic-release-linear-app", {
+      "teamKeys": ["SD"],
+      "packageName": "cli",
+      "addComment": true,
+      "commentTemplate": "Released in {package} {releaseLink} {channel}"
+    }]
+  ]
+}
+```
+
+**Available placeholders:**
+
+| Placeholder | Example | Description |
+|-------------|---------|-------------|
+| `{version}` | `1.0.0` | Version number |
+| `{channel}` | `(next channel)` | Release channel (empty for stable) |
+| `{package}` | `**cli**` | Bold package name |
+| `{packageName}` | `cli` | Raw package name |
+| `{releaseUrl}` | `https://github.com/.../releases/tag/cli-v1.0.0` | GitHub release URL |
+| `{releaseLink}` | `[1.0.0](https://...)` | Markdown link to release |
+| `{gitTag}` | `cli-v1.0.0` | Git tag |
+
+> **Note:** Placeholders are raw values. Add spaces in your template as needed—multiple spaces are automatically collapsed.
+
+**Default template:** `Released in {package} v{releaseLink} {channel}`
+
+**Example output:** `Released in **cli** v[1.0.0](https://github.com/org/repo/releases/tag/cli-v1.0.0) (next channel)`
 
 ## How it Works
 
