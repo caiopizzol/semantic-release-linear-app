@@ -60,7 +60,12 @@ export async function success(pluginConfig: PluginConfig, context: SuccessContex
     return;
   }
 
-  const { removeOldLabels = true, addComment = false, dryRun = false } = pluginConfig;
+  const {
+    removeOldLabels = true,
+    addComment = false,
+    dryRun = false,
+    commentTemplate,
+  } = pluginConfig;
 
   // Check for GitHub token
   if (!linear.githubToken) {
@@ -140,10 +145,14 @@ export async function success(pluginConfig: PluginConfig, context: SuccessContex
 
         // Add comment if configured
         if (addComment) {
-          const emoji = channel ? '🔬' : '🚀';
-          const channelText = channel ? ` (${channel} channel)` : '';
-          const packageText = linear.packageName ? `**${linear.packageName}** ` : '';
-          const comment = `${emoji} Released in ${packageText}version ${version}${channelText}`;
+          const comment = formatComment(
+            commentTemplate,
+            version,
+            channel,
+            linear.packageName,
+            nextRelease.gitTag,
+            repositoryUrl,
+          );
           await client.addComment(issue.id, comment);
         }
 
@@ -186,4 +195,52 @@ function getLabelColor(releaseType: ReleaseType): string {
   };
 
   return colors[releaseType] || '#4752C4'; // Default blue
+}
+
+/**
+ * Format comment with template placeholders
+ */
+function formatComment(
+  template: string | undefined,
+  version: string,
+  channel: string | undefined,
+  packageName: string | null,
+  gitTag: string,
+  repositoryUrl: string | undefined,
+): string {
+  // Raw values - no built-in spacing, template controls layout
+  const channelText = channel ? `(${channel} channel)` : '';
+  const packageText = packageName ? `**${packageName}**` : '';
+  const releaseUrl = buildReleaseUrl(repositoryUrl, gitTag);
+  const releaseLink = releaseUrl ? `[${version}](${releaseUrl})` : version;
+
+  // Default template with explicit spacing
+  const defaultTemplate = 'Released in {package} v{releaseLink} {channel}';
+  const tpl = template || defaultTemplate;
+
+  const result = tpl
+    .replace(/{version}/g, version)
+    .replace(/{channel}/g, channelText)
+    .replace(/{package}/g, packageText)
+    .replace(/{packageName}/g, packageName || '')
+    .replace(/{releaseUrl}/g, releaseUrl || '')
+    .replace(/{releaseLink}/g, releaseLink)
+    .replace(/{gitTag}/g, gitTag);
+
+  // Normalize whitespace: collapse multiple spaces, trim
+  return result.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Build GitHub release URL from repository URL and git tag
+ */
+function buildReleaseUrl(repositoryUrl: string | undefined, gitTag: string): string | null {
+  if (!repositoryUrl || !gitTag) return null;
+
+  // Parse GitHub URL (supports various formats)
+  const match = repositoryUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
+  if (!match) return null;
+
+  const [, owner, repo] = match;
+  return `https://github.com/${owner}/${repo}/releases/tag/${gitTag}`;
 }
