@@ -17,6 +17,9 @@ export interface PluginConfig {
   /** Preview changes without updating Linear (default: false) */
   dryRun?: boolean;
 
+  /** Package name for label prefix in monorepos (e.g., "superdoc" creates "superdoc-v1.0.0") */
+  packageName?: string;
+
   /** GitHub token for API access (falls back to GITHUB_TOKEN env var) */
   githubToken?: string;
 
@@ -28,6 +31,7 @@ export interface LinearContext {
   apiKey: string;
   teamKeys: string[] | null;
   labelPrefix: string;
+  packageName: string | null;
   githubToken: string | null;
   githubApiUrl: string;
 }

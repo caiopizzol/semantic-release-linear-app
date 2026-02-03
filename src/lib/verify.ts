@@ -65,6 +65,7 @@ export async function verifyConditions(
     apiKey: linearToken,
     teamKeys: teamKeys.length > 0 ? teamKeys : null,
     labelPrefix: pluginConfig.labelPrefix || 'v',
+    packageName: pluginConfig.packageName || null,
     githubToken,
     githubApiUrl,
   });

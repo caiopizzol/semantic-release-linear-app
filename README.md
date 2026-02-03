@@ -43,9 +43,27 @@ ENG-789
 |--------|---------|-------------|
 | `teamKeys` | `[]` | Team keys to filter (e.g., `["ENG"]`) |
 | `labelPrefix` | `"v"` | Prefix for version labels |
+| `packageName` | `null` | Package name for monorepos (e.g., `"superdoc"` creates `superdoc-v1.0.0`) |
 | `removeOldLabels` | `true` | Remove previous version labels |
 | `addComment` | `false` | Add release comment to issues |
 | `dryRun` | `false` | Preview without making changes |
+
+### Monorepo Support
+
+For monorepos with multiple packages, use the `packageName` option to create package-specific labels:
+
+```json
+{
+  "plugins": [
+    ["semantic-release-linear-app", {
+      "teamKeys": ["SD"],
+      "packageName": "superdoc"
+    }]
+  ]
+}
+```
+
+This creates labels like `superdoc-v1.2.3` instead of just `v1.2.3`.
 
 ## How it Works
 
