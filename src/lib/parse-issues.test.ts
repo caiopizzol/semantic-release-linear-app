@@ -21,6 +21,12 @@ describe('parse-issues', () => {
     expect(result).toEqual(['ENG-123']);
   });
 
+  test('extracts issue ID when followed by underscore', () => {
+    const branchName = 'sd-1681_block-id-crash';
+    const result = parseIssuesFromBranch(branchName, ['SD']);
+    expect(result).toEqual(['SD-1681']);
+  });
+
   test('returns empty array for branch without issues', () => {
     const branchName = 'feature/no-issues-here';
     const result = parseIssuesFromBranch(branchName);

@@ -18,8 +18,9 @@ export function parseIssuesFromBranch(
   // Build regex pattern based on team keys
   const teamPattern = teamKeys ? `(?:${teamKeys.join('|')})` : '[A-Z]+';
 
-  // Pattern matches: feature/ENG-123-description, ENG-123, bugfix/FEAT-45, etc.
-  const issuePattern = new RegExp(`\\b(${teamPattern}-\\d+)\\b`, 'gi');
+  // Pattern matches: feature/ENG-123-description, ENG-123, bugfix/FEAT-45, sd-1681_desc, etc.
+  // Uses lookahead instead of trailing \b so underscores after the number don't prevent matching
+  const issuePattern = new RegExp(`\\b(${teamPattern}-\\d+)(?=[^\\d]|$)`, 'gi');
 
   const matches = Array.from(branchName.matchAll(issuePattern));
   for (const match of matches) {
