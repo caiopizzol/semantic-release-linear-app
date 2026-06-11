@@ -1,6 +1,6 @@
 # semantic-release-linear-app
 
-A [semantic-release](https://github.com/semantic-release/semantic-release) plugin that adds version labels to Linear issues based on branch names.
+A [semantic-release](https://github.com/semantic-release/semantic-release) plugin that adds version labels to Linear issues based on the branch names and titles of associated Pull Requests.
 
 ## Install
 
@@ -29,12 +29,20 @@ npm install --save-dev semantic-release-linear-app
    - `LINEAR_TOKEN` - Linear API key or OAuth token
    - `GITHUB_TOKEN` - For finding PRs (usually already set in CI)
 
-3. Use branch names with Linear issue IDs:
+3. Use branch names or PR titles with Linear issue IDs:
 
 ```
 feature/ENG-123-add-auth
 bugfix/FEAT-456-fix-bug
 ENG-789
+```
+
+PR titles are also scanned, so issue IDs are picked up from titles like:
+
+```
+ENG-123: add auth
+fix: resolve crash [FEAT-456]
+fix(ENG-123, ENG-124): resolve issue
 ```
 
 ## Options
@@ -107,7 +115,9 @@ When `addComment` is enabled, you can customize the comment format using `commen
 flowchart LR
     A[Release Commit] --> B[GitHub PR]
     B --> C[Branch Name]
+    B --> F[PR Title]
     C --> D[Issue ID]
+    F --> D
     D --> E[Linear Label]
 
     subgraph semantic-release
@@ -121,7 +131,7 @@ flowchart LR
 1. **verifyConditions** - Validates `LINEAR_TOKEN` and tests API connection
 2. **success** - After release:
    - Queries GitHub for PRs associated with release commits
-   - Extracts issue IDs from branch names (e.g., `ENG-123`)
+   - Extracts issue IDs from PR branch names and PR titles (e.g., `ENG-123`), then merges them
    - Creates and applies version label to each issue
 
 ## Labels

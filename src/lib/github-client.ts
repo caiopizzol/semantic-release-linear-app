@@ -8,6 +8,12 @@ interface GraphQLResponse<T> {
 interface AssociatedPR {
   number: number;
   headRefName: string;
+  title: string;
+}
+
+export interface PRSources {
+  branches: string[];
+  titles: string[];
 }
 
 interface CommitNode {
@@ -57,14 +63,14 @@ export class GitHubClient {
   }
 
   /**
-   * Get source branch names for commits via associated PRs
+   * Get source strings (branch names and PR titles) for commits via associated PRs
    */
-  async getAssociatedPRBranches(
+  async getAssociatedPRSources(
     owner: string,
     repo: string,
     commitShas: string[],
-  ): Promise<string[]> {
-    if (commitShas.length === 0) return [];
+  ): Promise<PRSources> {
+    if (commitShas.length === 0) return { branches: [], titles: [] };
 
     // Build query for all commits
     const commitQueries = commitShas
@@ -77,6 +83,7 @@ export class GitHubClient {
               nodes {
                 number
                 headRefName
+                title
               }
             }
           }
@@ -97,8 +104,9 @@ export class GitHubClient {
       repository: Record<string, CommitNode | null>;
     }>(query);
 
-    // Extract unique branch names
+    // Extract unique branch names and PR titles
     const branches = new Set<string>();
+    const titles = new Set<string>();
     for (const key of Object.keys(data.repository)) {
       const commit = data.repository[key];
       if (commit?.associatedPullRequests?.nodes) {
@@ -106,11 +114,14 @@ export class GitHubClient {
           if (pr.headRefName) {
             branches.add(pr.headRefName);
           }
+          if (pr.title) {
+            titles.add(pr.title);
+          }
         }
       }
     }
 
-    return Array.from(branches);
+    return { branches: Array.from(branches), titles: Array.from(titles) };
   }
 }
 
