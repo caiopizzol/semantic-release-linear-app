@@ -1,46 +1,51 @@
 import { SuccessContext } from 'semantic-release';
 import { LinearClient } from './linear-client.js';
-import { GitHubClient, parseGitHubUrl } from './github-client.js';
-import { parseIssuesFromBranch } from './parse-issues.js';
+import { GitHubClient, parseGitHubUrl, PRSources } from './github-client.js';
+import { parseIssuesFromBranch, parseIssuesFromTitle } from './parse-issues.js';
 import { PluginConfig, ReleaseType } from '../types.js';
 import { getLinearContext } from './context.js';
 
 /**
- * Find source branches via GitHub API using associated PRs
+ * Find source strings (branch names and PR titles) via GitHub API using associated PRs
  */
-async function findSourceBranches(
+async function findSourceStrings(
   commits: readonly { hash: string }[],
   githubToken: string,
   githubApiUrl: string,
   repositoryUrl: string | undefined,
   logger: SuccessContext['logger'],
-): Promise<Set<string>> {
+): Promise<PRSources> {
   const branches = new Set<string>();
+  const titles = new Set<string>();
 
-  if (commits.length === 0) return branches;
+  if (commits.length === 0) return { branches: [], titles: [] };
 
   const parsed = parseGitHubUrl(repositoryUrl || '');
   if (!parsed) {
-    logger.log('Could not parse GitHub repository URL, skipping branch lookup');
-    return branches;
+    logger.log('Could not parse GitHub repository URL, skipping PR lookup');
+    return { branches: [], titles: [] };
   }
 
   const client = new GitHubClient(githubToken, githubApiUrl);
   const commitShas = commits.map((c) => c.hash);
 
   try {
-    const branchNames = await client.getAssociatedPRBranches(parsed.owner, parsed.repo, commitShas);
-    branchNames.forEach((b) => branches.add(b));
+    const sources = await client.getAssociatedPRSources(parsed.owner, parsed.repo, commitShas);
+    sources.branches.forEach((b) => branches.add(b));
+    sources.titles.forEach((t) => titles.add(t));
 
     if (branches.size > 0) {
       logger.log(`Found source branches via GitHub API: ${Array.from(branches).join(', ')}`);
+    }
+    if (titles.size > 0) {
+      logger.log(`Found PR titles via GitHub API: ${Array.from(titles).join(', ')}`);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.log(`GitHub API error: ${message}`);
   }
 
-  return branches;
+  return { branches: Array.from(branches), titles: Array.from(titles) };
 }
 
 /**
@@ -73,9 +78,9 @@ export async function success(pluginConfig: PluginConfig, context: SuccessContex
     return;
   }
 
-  // Find all branches that contributed to this release via GitHub API
+  // Find all branches and PR titles that contributed to this release via GitHub API
   const repositoryUrl = context.options?.repositoryUrl;
-  const sourceBranches = await findSourceBranches(
+  const { branches: sourceBranches, titles: sourceTitles } = await findSourceStrings(
     commits,
     linear.githubToken,
     linear.githubApiUrl,
@@ -83,26 +88,33 @@ export async function success(pluginConfig: PluginConfig, context: SuccessContex
     logger,
   );
 
-  if (sourceBranches.size === 0) {
-    logger.log('No source branches found, skipping Linear updates');
+  if (sourceBranches.length === 0 && sourceTitles.length === 0) {
+    logger.log('No source branches or PR titles found, skipping Linear updates');
     return;
   }
 
-  // Extract Linear issue IDs from all found branches
+  // Extract Linear issue IDs from all found branches and PR titles, then merge
   const issueIds = new Set<string>();
-  for (const branchName of Array.from(sourceBranches)) {
+  for (const branchName of sourceBranches) {
     const branchIssues = parseIssuesFromBranch(branchName, linear.teamKeys);
     branchIssues.forEach((id) => issueIds.add(id));
   }
+  for (const title of sourceTitles) {
+    const titleIssues = parseIssuesFromTitle(title, linear.teamKeys);
+    titleIssues.forEach((id) => issueIds.add(id));
+  }
 
   if (issueIds.size === 0) {
-    logger.log(`No Linear issues found in branches: ${Array.from(sourceBranches).join(', ')}`);
+    logger.log(
+      `No Linear issues found in branches: ${sourceBranches.join(', ')} ` +
+        `or PR titles: ${sourceTitles.join(', ')}`,
+    );
     return;
   }
 
   logger.log(
     `Found ${issueIds.size} Linear issue(s): ${Array.from(issueIds).join(', ')} ` +
-      `from ${sourceBranches.size} branch(es)`,
+      `from ${sourceBranches.length} branch(es) and ${sourceTitles.length} PR title(s)`,
   );
 
   const version = nextRelease.version;

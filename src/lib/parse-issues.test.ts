@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { parseIssuesFromBranch } from './parse-issues.js';
+import { parseIssuesFromBranch, parseIssuesFromTitle } from './parse-issues.js';
 
 describe('parse-issues', () => {
   test('extracts Linear issue IDs from branch name', () => {
@@ -31,5 +31,43 @@ describe('parse-issues', () => {
     const branchName = 'feature/no-issues-here';
     const result = parseIssuesFromBranch(branchName);
     expect(result).toEqual([]);
+  });
+
+  describe('parseIssuesFromTitle', () => {
+    test('extracts Linear issue ID from PR title', () => {
+      const title = 'ENG-123: add new feature';
+      const result = parseIssuesFromTitle(title);
+      expect(result).toEqual(['ENG-123']);
+    });
+
+    test('extracts issue ID from title with surrounding brackets', () => {
+      const title = 'feat: implement login [SD-1681]';
+      const result = parseIssuesFromTitle(title, ['SD']);
+      expect(result).toEqual(['SD-1681']);
+    });
+
+    test('extracts multiple issue IDs from a PR title', () => {
+      const title = 'Fix ENG-123 and FEAT-456 in one go';
+      const result = parseIssuesFromTitle(title);
+      expect(result).toEqual(expect.arrayContaining(['ENG-123', 'FEAT-456']));
+      expect(result).toHaveLength(2);
+    });
+
+    test('filters by team keys when provided', () => {
+      const title = 'Resolve ENG-123 and OTHER-456';
+      const result = parseIssuesFromTitle(title, ['ENG']);
+      expect(result).toEqual(['ENG-123']);
+    });
+
+    test('returns empty array for title without issues', () => {
+      const title = 'chore: bump dependencies';
+      const result = parseIssuesFromTitle(title);
+      expect(result).toEqual([]);
+    });
+
+    test('returns empty array for empty title', () => {
+      const result = parseIssuesFromTitle('');
+      expect(result).toEqual([]);
+    });
   });
 });
