@@ -17,20 +17,14 @@ jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
+      issues: write
+      pull-requests: write
       id-token: write
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          token: ${{ steps.generate_token.outputs.token }}
 
       - uses: pnpm/action-setup@v4
         with:
@@ -49,15 +43,13 @@ jobs:
       - name: Release
         id: release
         env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LINEAR_TOKEN: ${{ secrets.LINEAR_TOKEN }}
         run: |
           pnpm dlx semantic-release
 
       - name: Sync stable back to main
         if: github.ref == 'refs/heads/stable'
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
